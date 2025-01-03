@@ -1,0 +1,34 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "**/*.php" ]
+  pull_request:
+
+env:
+  REPORT_NAME: "coverage.xml"
+
+jobs:
+  run_test_upload_codecov:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          ini-values: xdebug.mode=coverage
+      - run: pecl install xdebug
+      - name: Install Dependencies
+        run: composer self-update && composer install && composer dump-autoload
+      - name: Generate Coverage
+        run: vendor/bin/pest --coverage --coverage-clover ${{ env.REPORT_NAME }}
+      - name: Upload Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: "${{ env.REPORT_NAME }}"
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: shilin83/leetcode-php
+          fail_ci_if_error: true
+          verbose: true
