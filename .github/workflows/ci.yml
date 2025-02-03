@@ -1,0 +1,46 @@
+name: Continuous Integration
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/_test.php"
+  pull_request:
+env:
+  FILE_NAME: coverage.xml
+  extensions: pcov
+  key: cache-v1
+  php-versions: 8.3
+jobs:
+  run_tests_and_upload_codecov:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup cache
+        id: extcache
+        uses: shivammathur/cache-extensions@v1
+        with:
+          php-version: ${{ env.php-versions }}
+          extensions: ${{ env.extensions }}
+          key: ${{ env.key }}
+      - name: cache extensions
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.extcache.outputs.dir }}
+          key: ${{ steps.extcache.outputs.key }}
+          restore-keys: ${{ steps.extcache.outputs.key }}
+      - name: setup php
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.php-versions }}
+          coverage: pcov
+      - name: install dependencies
+        run: composer self-update && composer install
+      - name: run tests
+        run: vendor/bin/pest --coverage --coverage-clover ${{env.FILE_NAME}}
+      - uses: codecov/codecov-action@v5
+        with:
+          files: ${{env.FILE_NAME}}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
