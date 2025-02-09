@@ -1,0 +1,7 @@
+services:
+  leetcode-php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: leetcode-php
+    container_name: leetcode-php
